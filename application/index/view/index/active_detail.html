@@ -1,0 +1,275 @@
+<!DOCTYPE html>
+<html lang="">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <title>会员卡</title>
+    <link href="__CSS__/weui.css" rel="stylesheet">
+    <link href="__CSS__/weui.css" rel="stylesheet">
+    <style>
+        .demos-title {
+            text-align: center;
+            font-size: 34px;
+            color: #3cc51f;
+            font-weight: 400;
+            margin: 0 15%;
+        }
+
+        .demos-header {
+            padding: 35px 0;
+        }
+
+    </style>
+</head>
+<body>
+<style>
+
+    .demos-title {
+        text-align: center;
+        font-size: 34px;
+        color: #3cc51f;
+        font-weight: 400;
+        margin: 0 15%;
+    }
+
+    .demos-header {
+        padding: 35px 0;
+    }
+
+</style>
+<div class="page js_show">
+    <header class="demos-header">
+        <h1 class="demos-title">身份认证</h1>
+    </header>
+    <div class="page__bd">
+        <div class="weui-cells__title">请填写</div>
+        <div class="weui-cells weui-cells_form">
+            <div class="weui-cell">
+                <div class="weui-cell__hd"><label class="weui-label">学号</label></div>
+                <div class="weui-cell__bd">
+                    <input class="weui-input" id="studentid" type="number" pattern="[0-9]*" placeholder="请输入学号"/>
+                </div>
+            </div>
+            {:token()}
+            <div class="weui-cell">
+                <div class="weui-cell__hd"><label class="weui-label">姓名</label></div>
+                <div class="weui-cell__bd">
+                    <input class="weui-input" id="name" type="text" placeholder="请输入姓名" value="{$xm}"/>
+                </div>
+            </div>
+            <div class="weui-cell">
+                <div class="weui-cell__hd"><label class="weui-label">学院</label></div>
+                <div class="weui-cell__bd">
+                    <input class="weui-input" id="college" type="text" placeholder="请输入学院"/>
+                </div>
+            </div>
+            <div class="weui-cell">
+                <div class="weui-cell__hd"><label class="weui-label">身份证号</label></div>
+                <div class="weui-cell__bd">
+                    <input class="weui-input" id="sfz" type="text" placeholder="请输入身份证号" value="{$sfz}"/>
+                </div>
+            </div>
+        </div>
+        <div class="weui-cells weui-cells_radio">
+            <label class="weui-cell weui-check__label" for="x11">
+                <div class="weui-cell__bd">
+                    <p>男</p>
+                </div>
+                <div class="weui-cell__ft">
+                    <input type="radio" class="weui-check" value="1" name="sex" id="x11" checked="checked">
+                    <span class="weui-icon-checked"></span>
+                </div>
+            </label>
+            <label class="weui-cell weui-check__label" for="x12">
+                <div class="weui-cell__bd">
+                    <p>女</p>
+                </div>
+                <div class="weui-cell__ft">
+                    <input type="radio" value="2" name="sex" class="weui-check" id="x12">
+                    <span class="weui-icon-checked"></span>
+                </div>
+            </label>
+        </div>
+        <div class="weui-btn-area">
+            <a class="weui-btn weui-btn_primary" href="javascript:" id="active">学信网验证</a>
+        </div>
+    </div>
+    <div class="weui-footer weui-footer_fixed-bottom">
+        <!--<p class="weui-footer__text">&copy;SA团队</p>-->
+    </div>
+    <div id="dialogs">
+        <div class="js_dialog" id="iosDialog1" style="display: none;">
+            <div class="weui-mask"></div>
+            <div class="weui-dialog">
+                <div class="weui-dialog__hd"><strong class="weui-dialog__title">弹窗标题</strong></div>
+                <div class="weui-dialog__bd">弹窗内容，告知当前状态、信息和解决方法，描述文字尽量控制在三行内</div>
+                <div class="weui-dialog__ft">
+                    <a href="javascript:;" onclick="javascript: $('#iosDialog1').hide() ;" class="weui-dialog__btn weui-dialog__btn_default">取消</a>
+                    <a href="javascript:;" class="weui-dialog__btn weui-dialog__btn_primary">确定</a>
+                </div>
+            </div>
+        </div>
+        <div class="js_dialog" id="iosDialog2" style="display: none;">
+            <div class="weui-mask"></div>
+            <div class="weui-dialog">
+                <div class="weui-dialog__hd"><strong class="weui-dialog__title">温馨提示</strong></div>
+                <div class="weui-dialog__bd">弹窗内容，告知当前状态、信息和解决方法，描述文字尽量控制在三行内</div>
+                <div class="weui-dialog__ft">
+                    <a href="javascript:;" onclick="javascript: $('#iosDialog2').hide() ;" class="weui-dialog__btn weui-dialog__btn_primary">知道了</a>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+<script src="__JS__/jweixin-1.2.0.js"></script>
+<script src="__JS__/jquery-2.1.4.js"></script>
+<script>
+    var authUrl = "{$auth}";
+    $(function () {
+        $("#active").click(function () {
+            var name = $("#name").val();
+            var sfz = $("#sfz").val();
+            var studentid = $("#studentid").val();
+            var college = $("#college").val();
+            var sex = $('input:radio[name="sex"]:checked').val();
+//            console.log(sex);
+            if(name == "" || sfz == "" || studentid == "" || college == "") {
+                showDialog2("学号、姓名、学院以及身份证都是必填项哦~");
+                return false;
+            }
+            if(isCardNo(sfz) != true && IdentityCodeValid(sfz) != true) {
+                showDialog2("请输入正确的身份证号~");
+                return false;
+            }
+            var data = {
+                '__token__' : $("input[name='__token__']")[0].value,
+                'sfz' : sfz,
+                'xm' : name,
+                'studentid' : studentid,
+                'college' : college,
+                'sex' : sex
+            };
+            _ajax(authUrl,"post",data,function (data) {
+                if(data.status == 1) {
+//                    showDialog2("激活成功");
+                    console.log(data.url);
+                    window.location.href=data.url;
+                }
+                else {
+                    showDialog2( data.info == undefined || data.info == "" ? "出现未知问题，请联系管理员~~~" : data.info);
+                }
+            },function (e) {
+                showDialog2("出现未知问题，请联系管理员！！！");
+            });
+        })
+
+    });
+
+    function _ajax(url,type,data,fn_success,fn_err) {
+        $.ajax({
+            url : url,
+            type : type,
+            data : data,
+            dataType : "JSON",
+            success : function (data) {
+                fn_success(data);
+            },
+            error : function (e) {
+                fn_err(e);
+            }
+        })
+    }
+
+
+    function showDialog1(des) {
+        $(".weui-dialog__bd").html(des);
+        $("#iosDialog1").show();
+    }
+
+    function showDialog2(des) {
+        $(".weui-dialog__bd").html(des);
+        $("#iosDialog2").show();
+    }
+
+    function IdentityCodeValid(code) {
+        var city={11:"北京",12:"天津",13:"河北",14:"山西",15:"内蒙古",21:"辽宁",22:"吉林",23:"黑龙江 ",31:"上海",32:"江苏",33:"浙江",34:"安徽",35:"福建",36:"江西",37:"山东",41:"河南",42:"湖北 ",43:"湖南",44:"广东",45:"广西",46:"海南",50:"重庆",51:"四川",52:"贵州",53:"云南",54:"西藏 ",61:"陕西",62:"甘肃",63:"青海",64:"宁夏",65:"新疆",71:"台湾",81:"香港",82:"澳门",91:"国外 "};
+        var tip = "";
+        var pass= true;
+
+        if(!code || !/^\d{6}(18|19|20)?\d{2}(0[1-9]|1[12])(0[1-9]|[12]\d|3[01])\d{3}(\d|X)$/i.test(code)){
+            tip = "身份证号格式错误";
+            pass = false;
+        }
+
+        else if(!city[code.substr(0,2)]){
+            tip = "地址编码错误";
+            pass = false;
+        }
+        else{
+            //18位身份证需要验证最后一位校验位
+            if(code.length == 18){
+                code = code.split('');
+                //∑(ai×Wi)(mod 11)
+                //加权因子
+                var factor = [ 7, 9, 10, 5, 8, 4, 2, 1, 6, 3, 7, 9, 10, 5, 8, 4, 2 ];
+                //校验位
+                var parity = [ 1, 0, 'X', 9, 8, 7, 6, 5, 4, 3, 2 ];
+                var sum = 0;
+                var ai = 0;
+                var wi = 0;
+                for (var i = 0; i < 17; i++)
+                {
+                    ai = code[i];
+                    wi = factor[i];
+                    sum += ai * wi;
+                }
+                var last = parity[sum % 11];
+                if(parity[sum % 11] != code[17]){
+                    tip = "校验位错误";
+                    pass =false;
+                }
+            }
+        }
+        return pass;
+    }
+
+    function isCardNo(card) {
+        // 身份证号码为15位或者18位，15位时全为数字，18位前17位为数字，最后一位是校验位，可能为数字或字符X
+        var reg = /(^\d{15}$)|(^\d{18}$)|(^\d{17}(\d|X|x)$)/;
+        if(reg.test(card) === false) {
+            return  false;
+        }
+        else {
+            return true;
+        }
+
+    }
+
+
+    $.post(share, { url: encodeURIComponent(location.href.split('#')[0]) }, function (data) {
+        var date = JSON.parse(data);
+        wx.config({
+            debug: false,
+
+            appId: date.appId,
+
+            timestamp: date.timestamp,
+
+            nonceStr: date.nonceStr,
+
+            signature: date.signature,
+            jsApiList: [
+                'hideAllNonBaseMenuItem'
+            ]
+        });
+
+    });
+
+    wx.ready(function () {
+        wx.hideAllNonBaseMenuItem();
+    });
+</script>
+
+
+</body>
+</html>

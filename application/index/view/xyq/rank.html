@@ -1,0 +1,330 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, minimum-scale=1.0, maximum-scale=1.0, user-scalable=no"/>
+    <meta http-equiv="X-UA-Compatible" content="IE=edge,chrome=1">
+    <meta name="apple-mobile-web-app-capable" content="yes" />
+    <meta name="apple-mobile-web-app-status-bar-style" content="black" />
+    <meta name="format-detection" content="telephone=no"/>
+    <title>排行榜</title>
+    <style type="text/css">
+        /*这里是reset.css*/
+        html, body, div, span, applet, object, iframe,
+        h1, h2, h3, h4, h5, h6, p, blockquote, pre,
+        a, abbr, acronym, address, big, cite, code,
+        del, dfn, em, img, ins, kbd, q, s, samp,
+        small, strike, strong, sub, sup, tt, var,
+        b, u, i, center,
+        dl, dt, dd, ol, ul, li,
+        fieldset, form, label, legend,
+        table, caption, tbody, tfoot, thead, tr, th, td,
+        article, aside, canvas, details, embed,
+        figure, figcaption, footer, header, hgroup,
+        menu, nav, output, ruby, section, summary,
+        time, mark, audio, video {
+            margin: 0;
+            padding: 0;
+            border: 0;
+            font-size: 100%;
+            font: inherit;
+            vertical-align: baseline;
+        }
+        /* HTML5 display-role reset for older browsers */
+        article, aside, details, figcaption, figure,
+        footer, header, hgroup, menu, nav, section {
+            display: block;
+        }
+        body {
+            line-height: 1;
+        }
+        ol, ul {
+            list-style: none;
+        }
+        blockquote, q {
+            quotes: none;
+        }
+        blockquote:before, blockquote:after,
+        q:before, q:after {
+            content: '';
+            content: none;
+        }
+        table {
+            border-collapse: collapse;
+            border-spacing: 0;
+        }
+
+        /*这里是页面样式表*/
+        body {
+            background: #eeeeee;
+            font-family: sans-serif;
+        }
+        #list-wrapper {
+            position: relative;
+            width: 100%;
+        }
+        .banner {
+            height: 200px;
+            text-align: center;
+            background: url("__IMG__/bgbanner.jpeg") no-repeat center;
+            background-size: cover;
+        }
+        .banner .avatar {
+            margin-top: 35px;
+            height: 60px;
+            width: 60px;
+            border-radius: 30px;
+        }
+        .banner .name,.banner .rank {
+            color: #dddddd;
+            margin-top: 10px;
+            font-size:18px;
+        }
+        .list {
+        }
+        .list-item {
+            position: relative;
+            display: -webkit-box; /* 老版本语法: Safari, iOS, Android browser, older WebKit browsers. */
+            display: -moz-box; /* 老版本语法: Firefox (buggy) */
+            display: -ms-flexbox; /* 混合版本语法: IE 10 */
+            display: -webkit-flex; /* 新版本语法: Chrome 21+ */
+            display: flex; /* 新版本语法: Opera 12.1, Firefox 22+ */
+            -webkit-box-align: center;
+            -moz-align-items: center;
+            -webkit-align-items: center;
+            align-items: center;
+            padding: 10px 20px;
+            border-bottom: 1px solid #eee;
+            background: #ffffff;
+        }
+        .list-item:last-child {
+            border-bottom: none;
+        }
+        .list-item.my-own {
+            margin-bottom:10px;
+        }
+        .list-item .avatar {
+            height: 50px;
+            width: 50px;
+            border-radius: 25px;
+            margin-right: 10px;
+        }
+        .list-item .wrapper {
+            flex: 1;
+        }
+        .list-item .name {
+            font-size: 18px;
+            margin-bottom: 8px;
+            font-weight: bold;
+        }
+        .list-item .class {
+            font-size: 14px;
+            color: #222222;
+        }
+        .list-item .rank {
+            vertical-align: middle;
+            font-size: 20px;
+            font-weight: bold;
+            margin-right: 10px;
+            color: #ffd020;
+        }
+        .list-item.no-more {
+            justify-content: center;
+        }
+    </style>
+</head>
+<body>
+<!--这里是页面dom-->
+<div class="banner">
+    <img class="avatar" src="{$personInfo.headImgUrl}" alt="">
+    <div class="name">{$personInfo.name}</div>
+    <div class="rank">我的排名 {$rank}</div>
+</div>
+<ul class="list">
+</ul>
+<!--这里是js库cdn-->
+<script src="https://cdn.bootcss.com/jquery/3.2.1/jquery.min.js"></script>
+<script src="https://cdn.bootcss.com/mustache.js/2.3.0/mustache.min.js"></script>
+<!--这里是mustache模板-->
+<script id="tpl" type="text/html">
+    <li class="list-item">
+        <img class="avatar" src="{{headImgUrl}}" alt="">
+        <div class="wrapper">
+            <div class="name">{{name}}</div>
+            <div class="class">{{grade}}级</div>
+        </div>
+        <div class="rank">NO.{{rank}}</div>
+    </li>
+</script>
+<!--这里是js逻辑部分-->
+<script>
+    var app = {
+        listData: [],
+        tpl: null,
+        scroller: null,
+        pageSize: 20,
+        pageIndex: 1,
+        isEnd: false,
+        init: function () {
+            var that = this;
+            this.tpl = $('#tpl').html().trim();
+            this.getData(this.pageIndex, function () {
+                that.renderList();
+            });
+            this.bindEvent();
+        },
+        bindEvent: function () {
+            var that = this;
+            $(window).scroll(function (e) {
+                if($(window).scrollTop() == $(document).height() - $(window).height()){
+                    if (that.listData.length < that.pageSize) {
+                        that.isEnd = true;
+                    }
+                    if (!that.isEnd) {
+                        that.pageIndex ++;
+                        that.getData(that.pageIndex, function () {
+                            that.renderList();
+                        });
+                    }
+                }
+            })
+        },
+        getData: function (page, callback) {
+            var that = this;
+            $.ajax({
+                type: 'get',
+                url: 'http://wx.aufe.vip/aufecmu_v4/index.php/index/xyq/getRank',
+                data: {
+                    page: page
+                },
+                dataType: 'json',
+                success: function (data) {
+                    if (data.status === 1) {
+                        that.listData = data.data;
+                        callback();
+                    } else {
+                        alert('接口错误')
+                    }
+                }
+            })
+        },
+        renderList: function () {
+            var html = '',
+                that = this;
+            this.listData.map(function (item) {
+                html += Mustache.render(that.tpl, item);
+            });
+            if (this.listData.length < this.pageSize) {
+                html += '<li class="list-item no-more">没有更多啦~</li>'
+            }
+            $('.list').append(html);
+        }
+    };
+    app.init();
+</script>
+<script src="__JS__/jweixin-1.0.0.js?s=213"></script>
+<script>
+    var share = "{$share}",rank="{$rank}",
+        desc="我们是彼此坚实的后盾",title= parseInt(rank) > 0 ? "我是第"+rank+"位领取校友卡的安财人" : "我们身处各行各业，我们分布世界各地",
+        imgUrl="http://wx.aufe.vip/aufecmu_v4/public/images/share.png?version=1",link="{$thisLink}";
+
+
+    $.post("http://ancai4399.com/jssdk_server/JssdkInterface.php?type=ticket", { url: encodeURIComponent(location.href.split('#')[0]) }, function (data) {
+        date = JSON.parse(data);
+        wx.config({
+            debug: false,
+
+            appId: date.appId,
+
+            timestamp: date.timestamp,
+
+            nonceStr: date.nonceStr,
+
+            signature: date.signature,
+            jsApiList: [
+                'onMenuShareTimeline',
+                'onMenuShareAppMessage',
+                'onMenuShareQQ',
+                'onMenuShareWeibo',
+                'onMenuShareQZone'
+            ]
+        });
+
+    });
+
+    wx.ready(function () {
+
+        wx.onMenuShareTimeline({
+            title: title, // 分享标题
+            link: link, // 分享链接，该链接域名或路径必须与当前页面对应的公众号JS安全域名一致
+            imgUrl: imgUrl, // 分享图标
+            success: function () {
+                // 用户确认分享后执行的回调函数
+            },
+            cancel: function () {
+                // 用户取消分享后执行的回调函数
+            }
+        });
+
+        wx.onMenuShareAppMessage({
+            title: title, // 分享标题
+            desc: desc, // 分享描述
+            link: link, // 分享链接，该链接域名或路径必须与当前页面对应的公众号JS安全域名一致
+            imgUrl: imgUrl, // 分享图标
+            type: 'link', // 分享类型,music、video或link，不填默认为link
+            dataUrl: '', // 如果type是music或video，则要提供数据链接，默认为空
+            success: function () {
+                // 用户确认分享后执行的回调函数
+            },
+            cancel: function () {
+                // 用户取消分享后执行的回调函数
+            }
+        });
+
+        wx.onMenuShareQQ({
+            title: title, // 分享标题
+            desc: desc, // 分享描述
+            link: link, // 分享链接，该链接域名或路径必须与当前页面对应的公众号JS安全域名一致
+            imgUrl: imgUrl, // 分享图标
+            success: function () {
+                // 用户确认分享后执行的回调函数
+            },
+            cancel: function () {
+                // 用户取消分享后执行的回调函数
+            }
+        });
+
+        wx.onMenuShareWeibo({
+            title: title, // 分享标题
+            desc: desc, // 分享描述
+            link: link, // 分享链接，该链接域名或路径必须与当前页面对应的公众号JS安全域名一致
+            imgUrl: imgUrl, // 分享图标
+            success: function () {
+                // 用户确认分享后执行的回调函数
+            },
+            cancel: function () {
+                // 用户取消分享后执行的回调函数
+            }
+        });
+
+        wx.onMenuShareQZone({
+            title: title, // 分享标题
+            desc: desc, // 分享描述
+            link: link, // 分享链接，该链接域名或路径必须与当前页面对应的公众号JS安全域名一致
+            imgUrl: imgUrl, // 分享图标
+            success: function () {
+                // 用户确认分享后执行的回调函数
+            },
+            cancel: function () {
+                // 用户取消分享后执行的回调函数
+            }
+        });
+
+    });
+
+
+
+
+</script>
+</body>
+</html>

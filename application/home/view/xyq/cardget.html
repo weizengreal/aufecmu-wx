@@ -1,0 +1,134 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>切换卡面</title>
+    <meta name="viewport" content="width=device-width,initial-scale=1,user-scalable=0">
+    <meta charset="utf-8">
+    <style type="text/css">
+        body {
+            font-family: 'Microsoft YaHei';
+            margin: 0;
+            padding: 0;
+            background-color: #e8e8e8
+        }
+
+        #wrap {
+            font-size: 14px;
+        }
+
+        .whole {
+            margin-top: 20px;
+            margin-bottom: 40px;
+        }
+
+        .image_first {
+            width: 94%;
+            height: 180px;
+            position: relative;
+            left: 3%;
+            border-radius: 5px;
+            background-color: #fff;
+            background-repeat: no-repeat;
+            background-size: cover;
+        }
+
+        .image_first img {
+            overflow: hidden;
+            border-radius: 5px;
+        }
+
+        .image_describe {
+            padding-top: 10px;
+        }
+
+        .detail {
+            float: left;
+            padding-left: 3%;
+        }
+
+        .newcard, .usecard {
+            float: right;
+            padding-right: 3%;
+        }
+
+        input[type="button"] {
+            float: right;
+            color: #2196f3;
+            background: none;
+            border: none;
+            outline: none;
+        }
+    </style>
+</head>
+<body>
+<div id="wrap">
+    <div class="whole">
+        <div class="image_first" style="background-image: url('http://wx.aufe.vip/aufecmu_v4{$selfbg}')" id="used_img">
+        </div>
+        <div class="image_describe">
+            <span class="detail" id="used_card">{$selfbgauthor}</span>
+            <span class="newcard">当前卡面</span>
+        </div>
+    </div>
+
+
+
+    {volist name="allbg" id="vo"}
+        <div class="whole">
+            <div class="image_first" style="background-image: url('http://wx.aufe.vip/aufecmu_v4{$vo.img}')" id="new_img">
+            </div>
+            <div class="image_describe">
+                <span class="detail" id="new_card">{$vo.author}</span>
+                <!--<input type="button" onclick="disp_confirm({$vo.index})" value="使用此卡面"/>-->
+                <span class="newcard" style="color: #2196f3;" onclick="disp_confirm({$vo.index})">使用此卡面</span>
+            </div>
+        </div>
+    {/volist}
+
+
+</div>
+<script src="__JS__/jweixin-1.0.0.js"></script>
+<script src="__JS__/jquery-2.1.4.js"></script>
+<script type="text/javascript">
+    var share = "{$share}",title="切换卡面111",desc="切换卡面111",imgUrl="http://wx.aufe.vip/aufecmu_v4/public/images/share.png",link="{$thisLink}";
+    function disp_confirm(index) {
+        var r = confirm("确认使用此卡面！");
+        if (r == true) {
+            $.post("{$changeBg}",{index : index},function (data) {
+                if(data.status == 1) {
+                    window.location.reload();
+                }
+                else {
+                    alert(data.info);
+                }
+            });
+        }
+    }
+
+    $.post("http://ancai4399.com/jssdk_server/JssdkInterface.php?type=ticket", { url: encodeURIComponent(location.href.split('#')[0]) }, function (data) {
+        var date = JSON.parse(data);
+        wx.config({
+            debug: false,
+
+            appId: date.appId,
+
+            timestamp: date.timestamp,
+
+            nonceStr: date.nonceStr,
+
+            signature: date.signature,
+            jsApiList: [
+                'hideAllNonBaseMenuItem',
+            ]
+        });
+
+    });
+
+    wx.ready(function () {
+        wx.hideAllNonBaseMenuItem();
+    });
+
+</script>
+<!--<script src="__JS__/share.js"></script>-->
+</body>
+</html>

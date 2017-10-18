@@ -1,0 +1,275 @@
+<!DOCTYPE html>
+<html>
+<head>
+	<title>安财校友卡</title>
+	<meta charset="utf-8">
+	<meta name="viewport" content="width=device-width,initial-scale=1,user-scalable=0">
+	<style type="text/css">
+		body {
+			background-image: url(__IMG__/rankbg.jpg);
+			background-repeat: no-repeat;
+			background-size: cover;
+			overflow: hidden;
+		}
+
+		.container {
+			width: 100%;
+			height: 200px;
+			position: absolute;
+			bottom: 0px;
+		}
+
+		.shareDiv {
+			background-color: white;
+			width: 60%;
+			position: absolute;
+			left: 20%;
+			height: 100px;
+			border:1px solid;
+			border-radius:5px;
+		}
+
+		.shareDiv_p1 {
+			font-size: 18px;
+			margin-left: 15px;
+		}
+
+		.shareDiv_p2 {
+			font-size: 16px;
+			margin-left: 15px;
+		}
+
+		.share {
+			width: 54%;
+			background-color: #ff9800;
+			height: 44px;
+			line-height: 44px;
+			position: absolute;
+			left: 23%;
+			text-align: center;
+			color: #000;
+			font-size: 20px;
+			bottom: 36px;
+			font-family: 'Microsoft YaHei';
+			border-radius: 5px;
+		}
+
+		a {
+			text-decoration: none
+		}
+
+		#shareTriangle {
+			width: 0px;
+			height: 0px;
+			border: 10px solid transparent;
+			border-top: 10px solid white;
+			position: absolute;
+			left: 48%;
+			bottom: 75px;
+		}
+
+		.display {
+			display: none;
+		}
+
+		.rank {
+			/*background-color: white;*/
+			width: auto;
+			position: absolute;
+			left: 20%;
+			height: 100px;
+			/*border:1px solid;*/
+			top: 35%;
+			color: white;
+		}
+
+		.rank_first {
+			font-size: 24px;
+			text-align: center;
+		}
+
+		.rank_second {
+			font-size: 24px;
+			text-align: center;
+		}
+
+		.rank_second_rk {
+			font-size: 26px;
+			font-weight: 800;
+		}
+	</style>
+</head>
+<body>
+<div class="whole">
+	<div class="rank">
+		{if condition="$rank == -1"}
+		<p class="rank_first">我们分布世界各地</p>
+		<p class="rank_second">我们是彼此坚实的后盾</p>
+		{else /}
+		<p class="rank_first">你是安财校友卡</p>
+		<p class="rank_second">第<span class="rank_second_rk">{$rank}</span>位领取者</p>
+		{/if}
+	</div>
+	<div class="container">
+		<div class="shareDiv display">
+			<p class="shareDiv_p1">点击右上角 ... 转发</p>
+			<p class="shareDiv_p2">记得转发到微信群哦~</p>
+		</div>
+		<div class="display" id="shareTriangle"></div>
+		<a class="share">邀请我的同学</a>
+	</div>
+</div>
+</body>
+<!--<script src="http://res.wx.qq.com/open/js/jweixin-1.0.0.js"></script>-->
+<!--<script src="__JS__/jweixin-1.2.0.js"></script>-->
+<script src="__JS__/jweixin-1.0.0.js?s=213"></script>
+<script src="__JS__/jquery-2.1.4.js"></script>
+<script>
+    var share = "{$share}",cardId = "{$cardId}",isGet = "{$isGet}",cardExtData = {},rank="{$rank}",
+    desc="我们是彼此坚实的后盾",title= parseInt(rank) > 0 ? "我是第"+rank+"位领取校友卡的安财人" : "我们身处各行各业，我们分布世界各地",
+		imgUrl="http://wx.aufe.vip/aufecmu_v4/public/images/share.png?version=1",link="{$thisLink}";
+
+
+
+
+	$(".share").click(function () {
+//        $(".display").css("display","block");
+	    if(isGet=="1") {
+            $(".display").css("display","block");
+        }
+        else {
+            wx.addCard({
+                cardList: [{
+                    cardId: cardId,
+                    cardExt: JSON.stringify(cardExtData)
+                }], // 需要添加的卡券列表
+                success: function (res) {
+                    var cardList = res.cardList; // 添加的卡券列表信息
+                    console.log(res);
+                    console.log(cardList);
+                }
+            });
+		}
+    });
+	alert(location.href.split('#')[0]);
+
+    $.post(share, { url: encodeURIComponent(location.href.split('#')[0]) ,type : "card" }, function (data) {
+        date = JSON.parse(data);
+        wx.config({
+            debug: true,
+
+            appId: date.appId,
+
+            timestamp: date.timestamp,
+
+            nonceStr: date.nonceStr,
+
+            signature: date.signature,
+            jsApiList: [
+                'onMenuShareTimeline',
+                'onMenuShareAppMessage',
+                'onMenuShareQQ',
+                'onMenuShareWeibo',
+                'onMenuShareQZone',
+                'addCard'
+            ]
+        });
+
+        cardExtData = {
+            timestamp: date.timestamp,
+            nonce_str: date.nonceStr,
+            signature: date.signature_card,
+            outer_str: "rank"
+        };
+
+        if(isGet=="2" || isGet=="3") {
+            wx.addCard({
+                cardList: [{
+                    cardId: cardId,
+                    cardExt: JSON.stringify(cardExtData)
+                }], // 需要添加的卡券列表
+                success: function (res) {
+                    var cardList = res.cardList; // 添加的卡券列表信息
+//                    console.log(res);
+//                    console.log(cardList);
+                }
+            });
+        }
+
+    });
+
+    wx.ready(function () {
+
+        wx.onMenuShareTimeline({
+            title: title, // 分享标题
+            link: link, // 分享链接，该链接域名或路径必须与当前页面对应的公众号JS安全域名一致
+            imgUrl: imgUrl, // 分享图标
+            success: function () {
+                // 用户确认分享后执行的回调函数
+            },
+            cancel: function () {
+                // 用户取消分享后执行的回调函数
+            }
+        });
+
+        wx.onMenuShareAppMessage({
+            title: title, // 分享标题
+            desc: desc, // 分享描述
+            link: link, // 分享链接，该链接域名或路径必须与当前页面对应的公众号JS安全域名一致
+            imgUrl: imgUrl, // 分享图标
+            type: 'link', // 分享类型,music、video或link，不填默认为link
+            dataUrl: '', // 如果type是music或video，则要提供数据链接，默认为空
+            success: function () {
+                // 用户确认分享后执行的回调函数
+            },
+            cancel: function () {
+                // 用户取消分享后执行的回调函数
+            }
+        });
+
+        wx.onMenuShareQQ({
+            title: title, // 分享标题
+            desc: desc, // 分享描述
+            link: link, // 分享链接，该链接域名或路径必须与当前页面对应的公众号JS安全域名一致
+            imgUrl: imgUrl, // 分享图标
+            success: function () {
+                // 用户确认分享后执行的回调函数
+            },
+            cancel: function () {
+                // 用户取消分享后执行的回调函数
+            }
+        });
+
+        wx.onMenuShareWeibo({
+            title: title, // 分享标题
+            desc: desc, // 分享描述
+            link: link, // 分享链接，该链接域名或路径必须与当前页面对应的公众号JS安全域名一致
+            imgUrl: imgUrl, // 分享图标
+            success: function () {
+                // 用户确认分享后执行的回调函数
+            },
+            cancel: function () {
+                // 用户取消分享后执行的回调函数
+            }
+        });
+
+        wx.onMenuShareQZone({
+            title: title, // 分享标题
+            desc: desc, // 分享描述
+            link: link, // 分享链接，该链接域名或路径必须与当前页面对应的公众号JS安全域名一致
+            imgUrl: imgUrl, // 分享图标
+            success: function () {
+                // 用户确认分享后执行的回调函数
+            },
+            cancel: function () {
+                // 用户取消分享后执行的回调函数
+            }
+        });
+
+    });
+
+
+
+
+</script>
+</html>
